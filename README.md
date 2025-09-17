@@ -60,6 +60,7 @@ elmo-hikes/
 
 ## Contributors
 - **Ziad Malik** - BCIT CST Student with a passion for gaming, cooking and programming.
+- **RudraP** - BCIT CST Student with a passion of exploring new technologies. Fun fact: I love playing soccer and video games in my free time.
 - **Teammate Name** - BCIT CST Student, Frontend enthusiast with a knack for creative design. Fun fact: Has a collection of over 50 houseplants.
 
 ---
