@@ -1,36 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pantry Tracker</title>
+    <link rel="stylesheet" href="styles/style.css" />
+    <link rel="script" href="src/main.js" />
+  </head>
+  <body>
+    <!-- Simple top bar -->
+    <header class="topbar">
+      <div class="wrap">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">🍞</div>
+          <span>Pantry Tracker</span>
+        </div>
 
-<head>
-    <title>My BCIT Project</title>
-    <meta name="comp1800 template" content="My 1800 App">
+        <button class="menu-btn" aria-label="Menu" aria-expanded="false">
+          ☰
+        </button>
 
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+        <nav class="nav">
+          <a href="#" class="active">Download</a>
+          <a href="#features">Support</a>
+          <a href="#pricing">AI Pricing</a>
+          <a href="#learn-more">Learn More</a>
+        </nav>
+      </div>
+    </header>
 
-    <!-- Other libraries go here -->
+    <!-- Hero -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-text">
+          <h1>Welcome to Pantry Tracker!</h1>
+          <p class="lead">
+            Track your food, reduce waste, and plan simple meals. Stay organized
+            and save money.
+          </p>
+          <div class="cta">
+            <a class="btn primary" href="#get-started">Login</a>
+            <a class="btn" href="#learn-more">Sign Up</a>
+          </div>
+        </div>
 
-    <!-- Link to styles of your own -->
-    <!-- <link rel="stylesheet" href="./styles/style.css"> -->
+        <!-- very simple “illustration” so we don’t need images -->
+        <img src="images/pantry.png" alt="Illustration of a pantry" />
+      </div>
+    </section>
 
-</head>
+    <!-- Feature band -->
+    <section id="features" class="band">
+      <div class="wrap band-grid">
+        <div>
+          <h2>Make your pantry work smarter</h2>
+          <p>
+            Keep an up-to-date list of what you have, what’s expiring, and what
+            you need to buy. Perfect for roommates and families.
+          </p>
+          <ul class="list">
+            <li>Inventory & expiry dates</li>
+            <li>Shared shopping list</li>
+            <li>Basic budget totals</li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
-<body>
+    <!-- Testimonials -->
+    <section class="testimonials">
+      <div class="wrap">
+        <h3>What our users say</h3>
 
-    <!------------------------------>
-    <!-- Your HTML Layout go here -->
-    <!------------------------------>
-    <!-- Stuff for body goes here -->
+        <div class="cards">
+          <article class="card">
+            <div class="photo a" role="img" aria-label="Ahmed"></div>
+            <div class="content">
+              <h4>Ahmed</h4>
+              <p>Great for roomies. We’ve saved a lot and waste less food.</p>
+            </div>
+            <div class="foot">1 week ago</div>
+          </article>
 
+          <article class="card">
+            <div class="photo b" role="img" aria-label="Emily"></div>
+            <div class="content">
+              <h4>Emily</h4>
+              <p>Helped me save about $200 this month and plan easy meals.</p>
+            </div>
+            <div class="foot">4 days ago</div>
+          </article>
 
-    <!---------------------------------------------->
-    <!-- Your own JavaScript functions go here    -->
-    <!---------------------------------------------->
+          <article class="card">
+            <div class="photo c" role="img" aria-label="George"></div>
+            <div class="content">
+              <h4>George</h4>
+              <p>
+                I recommend it to anyone trying to cut waste and save money.
+              </p>
+            </div>
+            <div class="foot">2 weeks ago</div>
+          </article>
+        </div>
+      </div>
+    </section>
 
-    <!-- Link to scripts of your own -->
-    <!-- <script type="module" src="./src/main.js"></script> -->
+    <!-- simple footer -->
+    <footer class="footer">
+      <div class="wrap small">
+        <p>© <span id="y"></span> Pantry Tracker</p>
+        <p>
+          <a href="#privacy">Privacy</a> · <a href="#terms">Terms</a> ·
+          <a href="#contact">Contact</a>
+        </p>
+      </div>
+    </footer>
 
-</body>
-
+    <script></script>
+  </body>
 </html>
