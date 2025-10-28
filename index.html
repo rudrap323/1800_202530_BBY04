@@ -4,8 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pantry Tracker</title>
-    <link rel="stylesheet" href="styles/style.css" />
+    <link rel="stylesheet" href="src/styles/style.css" />
     <link rel="script" href="src/main.js" />
+    <!-- Web Components for shared navbar and footer layout -->
+    <script type="module" src="/src/components/site-navbar.js"></script>
+    <script type="module" src="/src/components/site-footer.js"></script>
   </head>
   <body>
     <!-- Simple top bar -->
@@ -28,6 +31,8 @@
         </nav>
       </div>
     </header>
+    <!-- our own navbar goes here -->
+    <site-navbar></site-navbar>
 
     <!-- Hero -->
     <section class="hero">
@@ -39,8 +44,8 @@
             and save money.
           </p>
           <div class="cta">
-            <a class="btn primary" href="#get-started">Login</a>
-            <a class="btn" href="#learn-more">Sign Up</a>
+            <a class="btn primary" href="login.html">Login</a>
+            <a class="btn" href="login.html">Sign Up</a>
           </div>
         </div>
 
@@ -105,6 +110,9 @@
       </div>
     </section>
 
+    <!-- our own footer goes here -->
+    <site-footer></site-footer>
+
     <!-- simple footer -->
     <footer class="footer">
       <div class="wrap small">
@@ -116,6 +124,6 @@
       </div>
     </footer>
 
-    <script></script>
+    <script type="module" src="/src/app.js"></script>
   </body>
 </html>
