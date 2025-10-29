@@ -1,8 +1,8 @@
-# Elmo Hikes
+# Pantry Tracker
 
 
 ## Overview
-Elmo Hikes is a client-side JavaScript web application that helps users discover and explore hiking trails. The app displays a curated list of hike trails, each with details such as name, location, difficulty, and an image. Users can browse the list and mark their favorite trails for easy access later.
+Our team BBY 4 is making a fridge and pantry tracking app that helps roommates and family fairly split grocery responsibilities, avoid empty fridges and reduce food waste.
 
 Developed for the COMP 1800 course, this project applies User-Centred Design practices and agile project management, and demonstrates integration with Firebase backend services for storing user favorites.
 
@@ -11,10 +11,10 @@ Developed for the COMP 1800 course, this project applies User-Centred Design pra
 
 ## Features
 
-- Browse a list of curated hiking trails with images and details
-- Mark and unmark trails as favorites
-- View a personalized list of favorite hikes
-- Responsive design for desktop and mobile
+- Track Pantry stock
+- track depleting inventory
+- reduce waste and fairly split grocery responsibilities
+  
 
 ---
 
@@ -33,9 +33,9 @@ Example:
 ## Usage
 
 1. Open your browser and visit `http://localhost:3000`.
-2. Browse the list of hiking trails displayed on the main page.
-3. Click the heart icon (or similar) to mark a trail as a favorite.
-4. View your favorite hikes in the favorites section.
+2. Log into your account and join/view a group
+3. See pantry inventory and update if needed
+4. see what's depleting and what to restock.
 
 ---
 
@@ -60,7 +60,7 @@ elmo-hikes/
 
 ## Contributors
 
-- **Supreet** - BCIT CST Student with a passion for outdoor adventures and user-friendly applications. Fun fact: Loves solving Rubik's Cubes in under a minute.
+- **Supreet** - BCIT CST Student with a passion for gaming and DC comics.
 
 - **Ziad Malik** - BCIT CST Student with a passion for gaming, cooking and programming.
 - **RudraP** - BCIT CST Student with a passion of exploring new technologies. Fun fact: I love playing soccer and video games in my free time.
