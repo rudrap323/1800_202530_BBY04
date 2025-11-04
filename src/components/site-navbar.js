@@ -1,5 +1,9 @@
 // Import specific functions from the Firebase Auth SDK
 import {
+   onAuthReady
+} from "../authentication.js";
+
+import {
    onAuthStateChanged
 } from "firebase/auth";
 
@@ -15,7 +19,35 @@ class SiteNavbar extends HTMLElement {
       this.renderNavbar();
       this.renderAuthControls();
    }
+
    renderNavbar() {
+      onAuthReady((user) => {
+         if (!user) {
+            // If no user is signed in → redirect back to login page.
+            this.innerHTML = `
+            <header class="topbar">
+              <div class="wrap">
+                <div class="brand">
+                  <div class="logo" aria-hidden="true">🍞</div>
+                  <span>Pantry Tracker</span>
+                </div>
+
+                <button class="menu-btn" aria-label="Menu" aria-expanded="false">
+                  ☰
+                </button>
+
+                <nav class="nav">
+                  <a href="index.html" class="active">Home</a>
+                  <a href="#features">Support</a>
+                  <a href="#pricing">AI Pricing</a>
+                  <a href="#learn-more">Learn More</a>
+                </nav>
+                <div id="authControls" class="auth-controls d-flex align-items-center gap-2 my-2 my-lg-0"></div>
+              </div>
+            </header>
+        `;
+         }
+      });
       this.innerHTML = `
             <header class="topbar">
               <div class="wrap">
@@ -38,7 +70,8 @@ class SiteNavbar extends HTMLElement {
               </div>
             </header>
         `;
-   }
+
+   };
    renderAuthControls() {
       const authControls = this.querySelector("#authControls");
 
