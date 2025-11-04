@@ -23,7 +23,7 @@ class SiteNavbar extends HTMLElement {
    renderNavbar() {
       onAuthReady((user) => {
          if (!user) {
-            // If no user is signed in → redirect back to login page.
+            // If user is not signed in, homebutotn on navbar rediects to index.html not indexloggedin.html.
             this.innerHTML = `
             <header class="topbar">
               <div class="wrap">
