@@ -14,32 +14,63 @@
   </head>
 
   <body>
-    <!------------------------------>
-    <!-- Your HTML Layout go here -->
-    <!------------------------------>
-
-    <!-- our own navbar goes here -->
     <site-navbar></site-navbar>
 
-    <!-- Main content goes here -->
-    <div class="container-fluid bg-light text-dark p-5">
-      <div class="container bg-light p-5">
-        <h1 class="display-4">
-          Good morning <span id="name-goes-here">friend </span>
-        </h1>
-        <hr />
-        <p>Quote of the day: The best view comes after the hardest climb.</p>
-      </div>
-    </div>
+    <main class="container py-4">
+      <h1 class="mb-3">Welcome, <span id="name-goes-here"></span></h1>
 
-    <!-- our own footer goes here -->
+      <div id="alerts" class="mb-3"></div>
+
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Create a Group</h5>
+              <form id="create-group-form">
+                <div class="mb-3">
+                  <label class="form-label" for="create-group-name">Group Name</label>
+                  <input id="create-group-name" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="create-group-password">Password</label>
+                  <input id="create-group-password" type="password" class="form-control" required />
+                </div>
+                <button id="create-group-btn" class="btn btn-primary" type="submit">Create Group</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Join a Group</h5>
+              <form id="join-group-form">
+                <div class="mb-3">
+                  <label class="form-label" for="join-group-name">Group Name</label>
+                  <input id="join-group-name" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="join-group-password">Password</label>
+                  <input id="join-group-password" type="password" class="form-control" required />
+                </div>
+                <button id="join-group-btn" class="btn btn-success" type="submit">Join Group</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4" />
+
+      <section>
+        <h4>Your Groups</h4>
+        <ul id="my-groups" class="list-group"></ul>
+      </section>
+    </main>
+
     <site-footer></site-footer>
 
-    <!---------------------------------------------->
-    <!-- Your own JavaScript scripts go here      -->
-    <!---------------------------------------------->
-
-    <script type="module" src="/src/app.js"></script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
