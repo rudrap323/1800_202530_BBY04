@@ -54,7 +54,7 @@ async function renderMyGroups() {
   for (const g of my) {
     const li = document.createElement("li");
     li.className = "list-group-item d-flex justify-content-between align-items-center";
-    li.innerHTML = `<span>${g.name}</span>`;
+    li.innerHTML = `<a href="/myGroup.html?docID=${g.id}">${g.name}</a>`;
     list.appendChild(li);
   }
 }

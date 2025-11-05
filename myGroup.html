@@ -1,0 +1,90 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>My Group</title>
+    <meta name="comp1800 template" content="My 1800 App" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="src/styles/style.css" />
+    <script type="module" src="/src/components/site-navbar.js"></script>
+    <script type="module" src="/src/components/site-footer.js"></script>
+
+  </head>
+
+  <body>
+    <site-navbar></site-navbar>
+
+    <main class="container py-4">
+      <!-- Header -->
+      <h1 id="groupName">Loading group…</h1>
+
+      <!-- Group banner/image -->
+      <img id="groupImage" class="img-fluid rounded mt-3 d-block mx-auto" src="" alt="Group image" />
+
+      <!-- Meta -->
+      <div class="mt-3 meta" id="groupMeta"></div>
+      
+      <section id="adminPanel" class="mt-4 hidden">
+        <h2 class="h4">Admin</h2>
+        <div class="d-flex gap-2 align-items-center">
+          <input id="renameInput" type="text" class="form-control" placeholder="New group name" />
+          <button id="saveRenameBtn" class="btn btn-primary">Rename</button>
+        </div>
+        <div class="meta mt-1">Only the group owner can rename the group or remove members.</div>
+      </section>
+
+
+      <!-- Actions -->
+      <div class="mt-3 d-flex gap-2">
+        <button id="openChatBtn" class="btn btn-primary">Open Group Chat</button>
+        <button id="leaveGroupBtn" class="btn btn-outline-danger">Leave Group</button>
+      </div>
+
+      <!-- Description -->
+      <section class="mt-4">
+        <h2 class="h4">About this group</h2>
+        <p id="groupDescription">—</p>
+      </section>
+
+      <!-- Members -->
+      <section class="mt-4">
+        <h2 class="h4">Members</h2>
+        <div id="memberChips"></div>
+      </section>
+
+      <!-- Posts / Announcements -->
+      <section class="mt-4">
+        <h2 class="h4">Recent posts</h2>
+        <div id="postList"></div>
+      </section>
+    </main>
+
+    <!-- Templates -->
+    <template id="memberChipTemplate">
+      <span class="member-chip">
+        <img class="avatar" alt="member avatar" />
+        <span class="name">Member Name</span>
+        <span class="role meta"></span>
+        <button class="remove" title="Remove user" aria-label="Remove user">✕</button>
+      </span>
+    </template>
+
+
+    <template id="postCardTemplate">
+      <article class="card bg-light">
+        <div class="card-body">
+          <h5 class="title mb-1">Post title</h5>
+          <div class="meta time mb-2"></div>
+          <p class="body mb-0"></p>
+        </div>
+      </article>
+    </template>
+
+    <site-footer></site-footer>
+
+    <!-- App scripts -->
+    <script type="module" src="/src/app.js"></script>
+    <script type="module" src="/src/myGroup.js"></script>
+  </body>
+</html>
