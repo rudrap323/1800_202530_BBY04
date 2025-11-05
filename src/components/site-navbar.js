@@ -38,8 +38,7 @@ class SiteNavbar extends HTMLElement {
 
                 <nav class="nav">
                   <a href="index.html" class="active">Home</a>
-                  <a href="#features">Support</a>
-                  <a href="#pricing">AI Pricing</a>
+                  <a href="#features">Features</a>
                   <a href="#learn-more">Learn More</a>
                 </nav>
                 <div id="authControls" class="auth-controls d-flex align-items-center gap-2 my-2 my-lg-0"></div>
@@ -62,8 +61,8 @@ class SiteNavbar extends HTMLElement {
 
                 <nav class="nav">
                   <a href="indexloggedin.html" class="active">Home</a>
-                  <a href="#features">Support</a>
-                  <a href="#pricing">AI Pricing</a>
+                  <a href="main.html" class="active">Your Pantry</a>
+                  <a href="#features">Features</a>
                   <a href="#learn-more">Learn More</a>
                 </nav>
                 <div id="authControls" class="auth-controls d-flex align-items-center gap-2 my-2 my-lg-0"></div>

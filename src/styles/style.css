@@ -307,12 +307,12 @@ img {
   background: #e9e1db;
 }
 .photo.a {
-  background-image: url("https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop");
+  background-image: url("public/images/ryan.png?q=80&w=800&auto=format&fit=crop");
   background-size: cover;
   background-position: center;
 }
 .photo.b {
-  background-image: url("https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=800&auto=format&fit=crop");
+  background-image: url("public/images/gurkirit.png?q=80&w=800&auto=format&fit=crop");
   background-size: cover;
   background-position: center;
 }
