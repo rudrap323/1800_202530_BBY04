@@ -73,3 +73,20 @@ export function authErrorMessage(error) {
 
   return map[code] || "Something went wrong. Please try again.";
 }
+
+let authReadyResolver = [];
+export const whenAuthReady = new Promise((res) => authReadyResolvers.push(res));
+
+export function initializeAuthState(onUserChange) {
+  // Call with a callback to get current user updates.
+  onAuthStateChanged(auth, (user) => {
+    // notify
+    if (typeof onUserChange === "function") onUserChange(user);
+    // Resolve any waiters (only once).
+    while (authReadyResolvers.length) authReadyResolvers.shift()();
+  });
+}
+
+export async function logout() {
+  await signOut(auth);
+}

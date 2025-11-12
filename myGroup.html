@@ -27,6 +27,7 @@
       
       <section id="adminPanel" class="mt-4 d-none">
         <h2 class="h4">Admin</h2>
+        <!-- Rename Group -->
         <div class="d-flex gap-2 align-items-center">
           <input id="renameInput" type="text" class="form-control" placeholder="New group name" />
           <button id="saveRenameBtn" class="btn btn-primary">Rename</button>
@@ -44,7 +45,9 @@
       <!-- Actions -->
       <div class="mt-3 d-flex gap-2">
         <button id="openChatBtn" class="btn btn-primary">Open Group Chat</button>
-        <button id="leaveGroupBtn" class="btn btn-outline-danger">Leave Group</button>
+        <div id="group-actions" style="margin-top: 20px;">
+        <button id="delete-group-btn" class = "btn btn-outline-danger d-none">Delete Group</button>
+        <button id="leaveGroupBtn" class="btn btn-outline-danger d-none">Leave Group</button>
       </div>
 
       <!-- Description -->

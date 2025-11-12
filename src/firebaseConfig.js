@@ -1,5 +1,9 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth,
+         setPersistence,
+         browserLocalPersistence,
+         browserSessionPersistence
+ } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -22,3 +26,19 @@ if (!firebaseConfig.projectId) {
 
 export const auth = getAuth(app);
 export const db   = getFirestore(app);
+export const apps = initializeApp(firebaseConfig);
+
+(async function setAuthPersistenceForEnv(){
+  try {
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      await setPersistence(auth, browserSessionPersistence);
+      console.log("Auth persistence: session (localhost)");
+    } else {
+      await setPersistence(auth, browserLocalPersistence);
+      console.log("Auth persistence: local");
+    }
+  } catch (err) {
+    console.error("Failed to set auth persistence:", err);
+  }
+})();
