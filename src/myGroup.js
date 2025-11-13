@@ -119,6 +119,57 @@ function renderMembers() {
   if (!host.children.length) host.innerHTML = `<div class="meta">No members to show.</div>`;
 }
 
+/* ---------- Leave and Delete Buttons ---------- */
+onAuthStateChanged(getAuth(), async (user) => {
+  if (!user) return;
+
+  const groupId = new URL(location.href).searchParams.get("docID");
+  if (!groupId) return console.warn("No group ID found in URL");
+
+  const ref = doc(db, "groups", groupId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return console.warn("Group not found");
+
+  const data = snap.data();
+  const deleteBtn = document.getElementById("deleteBtn");
+  const leaveBtn = document.getElementById("leaveBtn");
+
+  const isAdmin = data.ownerUid === user.uid || data.admins?.includes?.(user.uid);
+  const isMember = data.users?.some?.(u => u.uid === user.uid);
+
+  // Show correct button
+  if (isAdmin && deleteBtn) deleteBtn.classList.remove("d-none");
+  if (!isAdmin && isMember && leaveBtn) leaveBtn.classList.remove("d-none");
+
+  // Leave group
+  leaveBtn?.addEventListener("click", async () => {
+    if (!confirm("Leave this group?")) return;
+    try {
+      const nextUsers = (data.users || []).filter(u => u.uid !== user.uid);
+      await updateDoc(ref, { users: nextUsers });
+      alert("You have left the group.");
+      window.location.href = "/groups.html";
+    } catch (err) {
+      console.error(err);
+      alert("Failed to leave the group.");
+    }
+  });
+
+  // Delete group
+  deleteBtn?.addEventListener("click", async () => {
+    if (!confirm("Delete this group? This cannot be undone!")) return;
+    try {
+      await deleteDoc(ref);
+      alert("Group deleted successfully.");
+      window.location.href = "/groups.html";
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete group.");
+    }
+  });
+});
+
+
 /* ---------- Pantry & Grocery ---------- */
 function groceryFrom(p) {
   return Object.entries(p).reduce((acc, [key, v]) => {
