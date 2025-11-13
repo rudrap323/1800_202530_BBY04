@@ -1,9 +1,9 @@
 import { db } from "./firebaseConfig.js";
 import {
-  doc, getDoc, updateDoc, serverTimestamp,
+  doc, getDoc, updateDoc, deleteDoc, serverTimestamp,
   collection, query, where, limit, getDocs,
   onSnapshot, deleteField
-} from "firebase/firestore";
+}  from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 /* =========================================================
