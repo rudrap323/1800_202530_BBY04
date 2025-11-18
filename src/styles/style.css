@@ -149,7 +149,7 @@ img { max-width: 100%; display: block; }
    Pantry UI (scoped)  — avoids global .card duplication
    ========================================================= */
 .pantry-grid{ display:grid; grid-template-columns:1fr; gap:16px; }
-@media (min-width:700px){ .pantry-grid{ grid-template-columns:1fr 1fr; } }
+@media (min-width:1000px){ .pantry-grid{ grid-template-columns:1fr 1fr; } }
 
 .pantry-grid .card{ border:1px solid #e5e7eb; border-radius:.75rem; overflow:hidden; background:#fff; }
 .pantry-grid .card .card-body{ padding:1rem 1.25rem; }
