@@ -55,17 +55,19 @@ export async function createGroup(name, password) {
     throw new Error("A group with that name already exists.");
   }
 
-  const userEntry = uid ? {
-    uid,
-    displayName: auth.currentUser.displayName || null,
-    email: auth.currentUser.email || null,
-    joinedAt: new Date(),          // ✅ client timestamp (allowed in arrays)
-  } : null;
+  const userEntry = uid
+    ? {
+        uid,
+        displayName: auth.currentUser.displayName || null,
+        email: auth.currentUser.email || null,
+        joinedAt: new Date(),
+      }
+    : null;
 
   const data = {
     name: name.trim(),
     password,
-    createdAt: serverTimestamp(),  // ✅ allowed at the root
+    createdAt: serverTimestamp(),
     ownerUid: uid,
     users: userEntry ? [userEntry] : [],
   };
@@ -86,6 +88,7 @@ export async function joinGroup(name, password) {
   if (!auth.currentUser) {
     throw new Error("Must be logged in to join a group.");
   }
+
   const uid = auth.currentUser.uid;
   const gid = groupIdFromName(name);
   const ref = doc(db, "groups", gid);
@@ -96,22 +99,27 @@ export async function joinGroup(name, password) {
   }
 
   const group = snap.data();
+
+  if (group.deletedAt) {
+    throw new Error("This group has been deleted.");
+  }
+
   if (group.password !== password) {
     throw new Error("Incorrect group password.");
   }
 
   const alreadyMember =
-    Array.isArray(group.users) && group.users.some(u => u?.uid === uid);
+    Array.isArray(group.users) && group.users.some((u) => u?.uid === uid);
 
   if (!alreadyMember) {
     await updateDoc(ref, {
-    users: arrayUnion({
-      uid,
-      displayName: auth.currentUser.displayName || null,
-      email: auth.currentUser.email || null,
-      joinedAt: new Date(),        // ✅ client timestamp here too
-    }),
-  });
+      users: arrayUnion({
+        uid,
+        displayName: auth.currentUser.displayName || null,
+        email: auth.currentUser.email || null,
+        joinedAt: new Date(),
+      }),
+    });
   }
 
   return gid;
@@ -124,6 +132,12 @@ export async function isMemberOfGroup(name) {
   const ref = doc(db, "groups", gid);
   const snap = await getDoc(ref);
   if (!snap.exists()) return false;
+
   const group = snap.data();
-  return Array.isArray(group.users) && group.users.some(u => u?.uid === auth.currentUser.uid);
+  if (group.deletedAt) return false;
+
+  return (
+    Array.isArray(group.users) &&
+    group.users.some((u) => u?.uid === auth.currentUser.uid)
+  );
 }
