@@ -27,7 +27,16 @@ img { max-width: 100%; display: block; }
 .wrap { width: min(1000px, 92%); margin: 0 auto; }
 
 /* ---------- header ---------- */
-.topbar { background: var(--oak-800); color: var(--white); border-bottom: 4px solid var(--oak-600); }
+.topbar { 
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  background: var(--oak-800); 
+  color: var(--white); 
+  border-bottom: 4px solid var(--oak-600); 
+}
+
 .topbar .wrap { display:flex; align-items:center; justify-content:space-between; padding:10px 0; }
 .brand { display:flex; align-items:center; gap:8px; font-weight:700; }
 .logo { width:28px; height:28px; display:grid; place-items:center; background:var(--oak-600); color:#fff; border-radius:6px; }
