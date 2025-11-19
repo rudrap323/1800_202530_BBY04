@@ -1,8 +1,16 @@
 import { db } from "./firebaseConfig.js";
 import {
-  doc, getDoc, updateDoc, serverTimestamp,
-  collection, query, where, limit, getDocs,
-  onSnapshot, deleteField
+  doc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  collection,
+  query,
+  where,
+  limit,
+  getDocs,
+  onSnapshot,
+  deleteField,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
@@ -10,15 +18,32 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
    State & small utilities
    ========================================================= */
 const $ = (sel) => document.querySelector(sel);
-const setTxt = (sel, v) => { const el = $(sel); if (el) el.textContent = v; };
+const setTxt = (sel, v) => {
+  const el = $(sel);
+  if (el) el.textContent = v;
+};
 const fmtTime = (ts) => {
-  try { if (ts?.toDate) return ts.toDate().toLocaleString(); if (typeof ts === "number") return new Date(ts).toLocaleString(); }
-  catch { /* noop */ }
+  try {
+    if (ts?.toDate) return ts.toDate().toLocaleString();
+    if (typeof ts === "number") return new Date(ts).toLocaleString();
+  } catch {
+    /* noop */
+  }
   return "";
 };
-const safeKey = (s) => (s || "").toLowerCase().trim().replace(/[^a-z0-9-]+/g, "-");
-const slug = (s) => (s || "").toLowerCase().trim()
-  .replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").replace(/--+/g, "-").slice(0, 40);
+const safeKey = (s) =>
+  (s || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, "-");
+const slug = (s) =>
+  (s || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/--+/g, "-")
+    .slice(0, 40);
 
 const state = { groupId: null, groupDoc: null, currentUser: null, isAdmin: false };
 const groupRef = () => doc(db, "groups", state.groupId);
@@ -36,28 +61,43 @@ async function loadGroup() {
 
 function computeIsAdmin() {
   const ownerUid = state.groupDoc?.ownerUid;
-  state.isAdmin = !!(state.currentUser && ownerUid && state.currentUser.uid === ownerUid);
+  const admins = Array.isArray(state.groupDoc?.admins)
+    ? state.groupDoc.admins
+    : [];
+  const uid = state.currentUser?.uid;
+
+  state.isAdmin = !!(uid && (uid === ownerUid || admins.includes(uid)));
   return state.isAdmin;
 }
 
 const DEFAULT_PANTRY = {
-  eggs:   { name: "Eggs",   amount: 12, unit: "pcs",  baseline: 6 },
-  milk:   { name: "Milk",   amount: 1,  unit: "L",    baseline: 1 },
-  bread:  { name: "Bread",  amount: 1,  unit: "loaf", baseline: 1 },
-  butter: { name: "Butter", amount: 1,  unit: "pack", baseline: 1 },
-  rice:   { name: "Rice",   amount: 2,  unit: "kg",   baseline: 1 }
+  eggs: { name: "Eggs", amount: 12, unit: "pcs", baseline: 6 },
+  milk: { name: "Milk", amount: 1, unit: "L", baseline: 1 },
+  bread: { name: "Bread", amount: 1, unit: "loaf", baseline: 1 },
+  butter: { name: "Butter", amount: 1, unit: "pack", baseline: 1 },
+  rice: { name: "Rice", amount: 2, unit: "kg", baseline: 1 },
 };
+
 async function ensurePantryDefaults() {
   const p = state.groupDoc?.pantry || {};
   if (Object.keys(p).length) return;
-  await updateDoc(groupRef(), { pantry: DEFAULT_PANTRY, pantryUpdatedAt: serverTimestamp() });
+  await updateDoc(groupRef(), {
+    pantry: DEFAULT_PANTRY,
+    pantryUpdatedAt: serverTimestamp(),
+  });
 }
 
 const pantry = () => state.groupDoc?.pantry || {};
 const upsertItem = (key, value) =>
-  updateDoc(groupRef(), { [`pantry.${key}`]: value, pantryUpdatedAt: serverTimestamp() });
+  updateDoc(groupRef(), {
+    [`pantry.${key}`]: value,
+    pantryUpdatedAt: serverTimestamp(),
+  });
 const deleteItem = (key) =>
-  updateDoc(groupRef(), { [`pantry.${key}`]: deleteField(), pantryUpdatedAt: serverTimestamp() });
+  updateDoc(groupRef(), {
+    [`pantry.${key}`]: deleteField(),
+    pantryUpdatedAt: serverTimestamp(),
+  });
 
 /* =========================================================
    Rendering: header, members, pantry, grocery
@@ -68,10 +108,16 @@ function renderHeader() {
   setTxt("#groupDescription", g.description || "No group description yet.");
   const meta = [
     `Privacy: ${g.privacy || "private"}`,
-    `Owner: ${(g.users || []).find(u => u.uid === g.ownerUid)?.displayName || g.ownerUid || "unknown"}`,
+    `Owner: ${
+      (g.users || []).find((u) => u.uid === g.ownerUid)?.displayName ||
+      g.ownerUid ||
+      "unknown"
+    }`,
     g.createdAt ? `Created: ${fmtTime(g.createdAt)}` : null,
-    `Join name: ${g.joinKey || state.groupId}`
-  ].filter(Boolean).join(" • ");
+    `Join name: ${g.joinKey || state.groupId}`,
+  ]
+    .filter(Boolean)
+    .join(" • ");
   setTxt("#groupMeta", meta);
 
   const img = $("#groupImage");
@@ -84,8 +130,10 @@ function renderHeader() {
   // Admin panel visibility + seed inputs
   const panel = $("#adminPanel");
   if (panel) panel.classList[state.isAdmin ? "remove" : "add"]("d-none");
-  const rename = $("#renameInput"); if (rename) rename.value = g.name || "";
-  const joinKey = $("#joinKeyInput"); if (joinKey) joinKey.value = g.joinKey || state.groupId;
+  const rename = $("#renameInput");
+  if (rename) rename.value = g.name || "";
+  const joinKey = $("#joinKeyInput");
+  if (joinKey) joinKey.value = g.joinKey || state.groupId;
 }
 
 function renderMembers() {
@@ -100,83 +148,138 @@ function renderMembers() {
       const tb = b?.joinedAt?.toMillis?.() ?? +new Date(b?.joinedAt || 0);
       return ta - tb;
     })
-    .forEach(m => {
+    .forEach((m) => {
       const chip = tpl.content.cloneNode(true);
-      chip.querySelector(".avatar").src = m.photoURL || "/images/avatar-placeholder.png";
-      chip.querySelector(".avatar").alt = `${m.displayName || "Member"} avatar`;
+      chip.querySelector(".avatar").src =
+        m.photoURL || "/images/avatar-placeholder.png";
+      chip.querySelector(".avatar").alt = `${
+        m.displayName || "Member"
+      } avatar`;
       chip.querySelector(".name").textContent = m.displayName || "Member";
       const isOwner = m.uid === state.groupDoc?.ownerUid;
       const roleEl = chip.querySelector(".role");
       if (roleEl) roleEl.textContent = isOwner ? " • owner" : "";
 
       const removeBtn = chip.querySelector(".remove");
-      if (state.isAdmin && !isOwner) removeBtn.addEventListener("click", () => onRemoveMember(m.uid, m.displayName));
+      if (state.isAdmin && !isOwner)
+        removeBtn.addEventListener("click", () =>
+          onRemoveMember(m.uid, m.displayName)
+        );
       else removeBtn.remove();
 
       host.appendChild(chip);
     });
 
-  if (!host.children.length) host.innerHTML = `<div class="meta">No members to show.</div>`;
+  if (!host.children.length)
+    host.innerHTML = `<div class="meta">No members to show.</div>`;
 }
 
-/* ---------- Leave and Delete Buttons ---------- */
-onAuthStateChanged(getAuth(), async (user) => {
-  if (!user) return;
+function updateMembershipButtons() {
+  const deleteBtn = $("#deleteBtn");
+  const leaveBtn = $("#leaveBtn");
 
-  const groupId = new URL(location.href).searchParams.get("docID");
-  if (!groupId) return console.warn("No group ID found in URL");
+  const uid = state.currentUser?.uid;
+  const users = Array.isArray(state.groupDoc?.users)
+    ? state.groupDoc.users
+    : [];
 
-  const ref = doc(db, "groups", groupId);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return console.warn("Group not found");
+  const isOwner = uid && state.groupDoc?.ownerUid === uid;
+  const isAdmin = state.isAdmin;
+  const isMember = !!uid && users.some((u) => u.uid === uid);
 
-  const data = snap.data();
-  const deleteBtn = document.getElementById("deleteBtn");
-  const leaveBtn = document.getElementById("leaveBtn");
+  // Admins/owner can delete the group
+  if (deleteBtn) {
+    deleteBtn.classList[isAdmin ? "remove" : "add"]("d-none");
+  }
 
-  const isAdmin = data.ownerUid === user.uid || data.admins?.includes?.(user.uid);
-  const isMember = data.users?.some?.(u => u.uid === user.uid);
+  // Regular members can leave; admins/owner don’t use the leave button
+  if (leaveBtn) {
+    const showLeave = !isAdmin && isMember;
+    leaveBtn.classList[showLeave ? "remove" : "add"]("d-none");
+  }
+}
 
-  // Show correct button
-  if (isAdmin && deleteBtn) deleteBtn.classList.remove("d-none");
-  if (!isAdmin && isMember && leaveBtn) leaveBtn.classList.remove("d-none");
+async function onLeaveGroupClick() {
+  if (!state.currentUser || !state.groupDoc) {
+    alert("You must be signed in and have a group loaded to leave.");
+    return;
+  }
+  if (!confirm("Leave this group?")) return;
 
-  // Leave group
-  leaveBtn?.addEventListener("click", async () => {
-    if (!confirm("Leave this group?")) return;
-    try {
-      const nextUsers = (data.users || []).filter(u => u.uid !== user.uid);
-      await updateDoc(ref, { users: nextUsers });
-      alert("You have left the group.");
-      window.location.href = "/groups.html";
-    } catch (err) {
-      console.error(err);
-      alert("Failed to leave the group.");
+  const uid = state.currentUser.uid;
+
+  try {
+    const users = Array.isArray(state.groupDoc.users)
+      ? state.groupDoc.users
+      : [];
+    const nextUsers = users.filter((u) => u && u.uid !== uid);
+
+    if (nextUsers.length === users.length) {
+      console.warn("LeaveGroup: current user not found in state.groupDoc.users", {
+        uid,
+        users,
+      });
+      alert("You are not currently listed as a member of this group.");
+      return;
     }
-  });
 
-  // Delete group
-  deleteBtn?.addEventListener("click", async () => {
-    if (!confirm("Delete this group? This cannot be undone!")) return;
-    try {
-      await deleteDoc(ref);
-      alert("Group deleted successfully.");
-      window.location.href = "/groups.html";
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete group.");
-    }
-  });
-});
+    await updateDoc(groupRef(), {
+      users: nextUsers,
+      pantryUpdatedAt: serverTimestamp(), // keep parity with inventory
+    });
 
+    // Keep local state in sync until snapshot arrives
+    state.groupDoc.users = nextUsers;
+    updateMembershipButtons();
+  } catch (err) {
+    console.error(
+      "Failed to leave group:",
+      err.code || err.name,
+      err.message || err
+    );
+    alert("Failed to leave the group. Check the console for error details.");
+  }
+}
+
+async function onDeleteGroupClick() {
+  if (!state.isAdmin || !state.groupDoc) {
+    alert("Only a group admin/owner can delete this group.");
+    return;
+  }
+  if (!confirm("Delete this group? This cannot be undone!")) return;
+
+  try {
+    // Soft-delete: mark as deleted instead of hard delete
+    await updateDoc(groupRef(), {
+      deletedAt: serverTimestamp(),
+    });
+    // onSnapshot will handle redirects when confirmed
+  } catch (err) {
+    console.error(
+      "Failed to delete group:",
+      err.code || err.name,
+      err.message || err
+    );
+    alert("Failed to delete the group. Check console for details.");
+  }
+}
 
 /* ---------- Pantry & Grocery ---------- */
 function groceryFrom(p) {
-  return Object.entries(p).reduce((acc, [key, v]) => {
-    const amt = +v?.amount || 0, base = +v?.baseline || 0;
-    if (base > 0 && amt < base) acc.push({ key, name: v.name || key, need: Math.ceil(base - amt), unit: v.unit || "" });
-    return acc;
-  }, []).sort((a, b) => a.name.localeCompare(b.name));
+  return Object.entries(p)
+    .reduce((acc, [key, v]) => {
+      const amt = +v?.amount || 0,
+        base = +v?.baseline || 0;
+      if (base > 0 && amt < base)
+        acc.push({
+          key,
+          name: v.name || key,
+          need: Math.ceil(base - amt),
+          unit: v.unit || "",
+        });
+      return acc;
+    }, [])
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function renderPantry() {
@@ -185,7 +288,9 @@ function renderPantry() {
   tbody.innerHTML = "";
 
   const p = pantry();
-  const keys = Object.keys(p).sort((a, b) => (p[a].name || a).localeCompare(p[b].name || b));
+  const keys = Object.keys(p).sort((a, b) =>
+    (p[a].name || a).localeCompare(p[b].name || b)
+  );
 
   if (!keys.length) {
     tbody.innerHTML = `<tr><td colspan="5" class="meta">No items yet. Add something above.</td></tr>`;
@@ -202,9 +307,15 @@ function renderPantry() {
     tdName.textContent = item.name || k;
 
     // amount (number input)
-    const tdAmount = document.createElement("td"); tdAmount.className = "text-end";
+    const tdAmount = document.createElement("td");
+    tdAmount.className = "text-end";
     const amt = document.createElement("input");
-    Object.assign(amt, { type: "number", min: "0", step: "1", value: Number(item.amount || 0) });
+    Object.assign(amt, {
+      type: "number",
+      min: "0",
+      step: "1",
+      value: Number(item.amount || 0),
+    });
     amt.className = "form-control";
     amt.addEventListener("change", () => onUpdateAmount(k, Number(amt.value)));
     tdAmount.appendChild(amt);
@@ -212,30 +323,49 @@ function renderPantry() {
     // unit (text input)
     const tdUnit = document.createElement("td");
     const unit = document.createElement("input");
-    Object.assign(unit, { type: "text", placeholder: "Unit", value: item.unit || "" });
+    Object.assign(unit, {
+      type: "text",
+      placeholder: "Unit",
+      value: item.unit || "",
+    });
     unit.className = "form-control";
     unit.addEventListener("change", () => onUpdateUnit(k, unit.value));
     tdUnit.appendChild(unit);
 
     // baseline (admin only)
-    const tdBase = document.createElement("td"); tdBase.className = "text-end";
+    const tdBase = document.createElement("td");
+    tdBase.className = "text-end";
     const base = document.createElement("input");
-    Object.assign(base, { type: "number", min: "0", step: "1", value: Number(item.baseline || 0) });
+    Object.assign(base, {
+      type: "number",
+      min: "0",
+      step: "1",
+      value: Number(item.baseline || 0),
+    });
     base.className = "form-control";
     base.disabled = !state.isAdmin;
-    base.addEventListener("change", () => state.isAdmin && onUpdateBaseline(k, Number(base.value)));
+    base.addEventListener("change", () =>
+      state.isAdmin && onUpdateBaseline(k, Number(base.value))
+    );
     tdBase.appendChild(base);
 
     // actions
     const tdAct = document.createElement("td");
     const mkBtn = (txt, klass, cb) => {
-      const b = document.createElement("button"); b.className = klass; b.textContent = txt; b.addEventListener("click", cb); return b;
+      const b = document.createElement("button");
+      b.className = klass;
+      b.textContent = txt;
+      b.addEventListener("click", cb);
+      return b;
     };
     tdAct.append(
       mkBtn("–", "btn btn-outline-secondary me-1", () => onNudge(k, -1)),
-      mkBtn("+", "btn btn-outline-secondary me-1", () => onNudge(k, +1)),
+      mkBtn("+", "btn btn-outline-secondary me-1", () => onNudge(k, +1))
     );
-    if (state.isAdmin) tdAct.append(mkBtn("Remove", "btn btn-outline-danger", () => onRemoveItem(k)));
+    if (state.isAdmin)
+      tdAct.append(
+        mkBtn("Remove", "btn btn-outline-danger", () => onRemoveItem(k))
+      );
 
     tr.append(tdName, tdAmount, tdUnit, tdBase, tdAct);
     tbody.appendChild(tr);
@@ -259,15 +389,20 @@ function renderGrocery() {
   }
 
   items.forEach(({ key, name, need, unit }) => {
-    const li = document.createElement("li"); li.className = "grocery-item";
-    const cb = document.createElement("input"); cb.type = "checkbox"; // UI-only
+    const li = document.createElement("li");
+    li.className = "grocery-item";
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; // UI-only
     const label = document.createElement("div");
-    label.innerHTML = `${name} <span class="qty">${need}${unit ? " " + unit : ""}</span>`;
+    label.innerHTML = `${name} <span class="qty">${need}${
+      unit ? " " + unit : ""
+    }</span>`;
     const dismiss = document.createElement("button");
     dismiss.className = "btn btn-outline-secondary";
     dismiss.textContent = "Dismiss";
     dismiss.addEventListener("click", () => {
-      const it = pantry()[key]; if (!it) return;
+      const it = pantry()[key];
+      if (!it) return;
       const nextAmt = Math.max(+it.amount || 0, +it.baseline || 0);
       upsertItem(key, { ...it, amount: nextAmt }).then(renderPantry);
     });
@@ -290,7 +425,15 @@ async function onAddItem(e) {
   const key = safeKey(name);
   const existing = pantry()[key];
   const next = existing
-    ? { ...existing, name, unit, amount: Math.max(0, Math.floor((existing.amount || 0) + amount)) }
+    ? {
+        ...existing,
+        name,
+        unit,
+        amount: Math.max(
+          0,
+          Math.floor((existing.amount || 0) + amount)
+        ),
+      }
     : { name, unit, amount: Math.floor(amount), baseline: 0 };
   await upsertItem(key, next);
 
@@ -299,27 +442,51 @@ async function onAddItem(e) {
   $("#addItemUnit").value = "";
   renderPantry();
 }
+
 async function onUpdateAmount(key, newAmount) {
-  const it = pantry()[key]; if (!it) return alert("This item was removed by an admin.");
-  await upsertItem(key, { ...it, amount: Math.max(0, Number.isFinite(newAmount) ? Math.floor(newAmount) : 0) });
+  const it = pantry()[key];
+  if (!it) return alert("This item was removed by an admin.");
+  await upsertItem(key, {
+    ...it,
+    amount: Math.max(
+      0,
+      Number.isFinite(newAmount) ? Math.floor(newAmount) : 0
+    ),
+  });
   renderPantry();
 }
+
 async function onNudge(key, delta) {
-  const it = pantry()[key]; if (!it) return alert("This item was removed by an admin.");
-  await upsertItem(key, { ...it, amount: Math.max(0, Math.floor((it.amount || 0) + delta)) });
+  const it = pantry()[key];
+  if (!it) return alert("This item was removed by an admin.");
+  await upsertItem(key, {
+    ...it,
+    amount: Math.max(0, Math.floor((it.amount || 0) + delta)),
+  });
   renderPantry();
 }
+
 async function onUpdateUnit(key, unit) {
-  const it = pantry()[key]; if (!it) return alert("This item was removed by an admin.");
+  const it = pantry()[key];
+  if (!it) return alert("This item was removed by an admin.");
   await upsertItem(key, { ...it, unit: unit || "" });
   renderPantry();
 }
+
 async function onUpdateBaseline(key, baseline) {
   if (!state.isAdmin) return alert("Only the owner can change baselines.");
-  const it = pantry()[key]; if (!it) return;
-  await upsertItem(key, { ...it, baseline: Math.max(0, Number.isFinite(baseline) ? Math.floor(baseline) : 0) });
+  const it = pantry()[key];
+  if (!it) return;
+  await upsertItem(key, {
+    ...it,
+    baseline: Math.max(
+      0,
+      Number.isFinite(baseline) ? Math.floor(baseline) : 0
+    ),
+  });
   renderPantry();
 }
+
 async function onRemoveItem(key) {
   if (!state.isAdmin) return alert("Only the group owner can remove items.");
   if (!confirm("Remove this item from the pantry?")) return;
@@ -335,35 +502,62 @@ async function onRenameDisplayName() {
   const newName = ($("#renameInput")?.value || "").trim();
   if (!newName) return alert("Please enter a group name.");
 
-  try { await updateDoc(groupRef(), { name: newName }); state.groupDoc.name = newName; renderHeader(); alert("Group name updated."); }
-  catch (e) { console.error(e); alert("Failed to rename group."); }
+  try {
+    await updateDoc(groupRef(), { name: newName });
+    state.groupDoc.name = newName;
+    renderHeader();
+    alert("Group name updated.");
+  } catch (e) {
+    console.error(e);
+    alert("Failed to rename group.");
+  }
 }
 
 async function onSaveJoinKey() {
   if (!state.isAdmin) return alert("Only the owner can change the join name.");
   const raw = ($("#joinKeyInput")?.value || "").trim();
   const newKey = slug(raw);
-  if (!newKey) return alert("Join name is required (letters/numbers and dashes).");
-  if (newKey === (state.groupDoc.joinKey || state.groupId)) return alert("Join name is unchanged.");
+  if (!newKey)
+    return alert("Join name is required (letters/numbers and dashes).");
+  if (newKey === (state.groupDoc.joinKey || state.groupId))
+    return alert("Join name is unchanged.");
 
   try {
-    const q = query(collection(db, "groups"), where("joinKey", "==", newKey), limit(1));
+    const q = query(
+      collection(db, "groups"),
+      where("joinKey", "==", newKey),
+      limit(1)
+    );
     const snap = await getDocs(q);
-    if (!snap.empty && snap.docs[0].id !== state.groupId) return alert("That join name is already taken. Try another.");
-    await updateDoc(groupRef(), { joinKey: newKey }); state.groupDoc.joinKey = newKey; renderHeader(); alert("Join name updated.");
-  } catch (e) { console.error(e); alert("Failed to update join name."); }
+    if (!snap.empty && snap.docs[0].id !== state.groupId)
+      return alert("That join name is already taken. Try another.");
+    await updateDoc(groupRef(), { joinKey: newKey });
+    state.groupDoc.joinKey = newKey;
+    renderHeader();
+    alert("Join name updated.");
+  } catch (e) {
+    console.error(e);
+    alert("Failed to update join name.");
+  }
 }
 
 async function onRemoveMember(uid, displayName) {
   if (!state.isAdmin) return alert("Only the owner can remove members.");
-  if (!uid || !confirm(`Remove ${displayName || "this user"} from the group?`)) return;
+  if (!uid || !confirm(`Remove ${displayName || "this user"} from the group?`))
+    return;
   try {
-    const next = (Array.isArray(state.groupDoc.users) ? state.groupDoc.users : []).filter(u => u.uid !== uid);
+    const next = (Array.isArray(state.groupDoc.users)
+      ? state.groupDoc.users
+      : []
+    ).filter((u) => u.uid !== uid);
     await updateDoc(groupRef(), { users: next });
     state.groupDoc.users = next;
     renderMembers();
     alert("Member removed.");
-  } catch (e) { console.error(e); alert("Failed to remove member."); }
+  } catch (e) {
+    console.error(e);
+    alert("Failed to remove member.");
+  }
 }
 
 /* =========================================================
@@ -371,17 +565,21 @@ async function onRemoveMember(uid, displayName) {
    ========================================================= */
 function wire() {
   $("#openChatBtn")?.addEventListener("click", () => {
-    // Might remove this feature if it is unfeasable to implement chat in time.
     alert("Group chat is not implemented in this template.");
-    //window.location.href = `/src/groupChat.html?docID=${encodeURIComponent(state.groupId)}`;
   });
-  $("#leaveGroupBtn")?.addEventListener("click", () => alert("Leaving a group is not implemented in this template."));
+
+  $("#leaveBtn")?.addEventListener("click", onLeaveGroupClick);
+  $("#deleteBtn")?.addEventListener("click", onDeleteGroupClick);
+
   $("#saveRenameBtn")?.addEventListener("click", onRenameDisplayName);
   $("#saveJoinKeyBtn")?.addEventListener("click", onSaveJoinKey);
 
   $("#addPantryForm")?.addEventListener("submit", onAddItem);
   $("#clearCheckedBtn")?.addEventListener("click", () =>
-    document.querySelectorAll("#groceryList input[type=checkbox]").forEach(cb => (cb.checked = false)));
+    document
+      .querySelectorAll("#groceryList input[type=checkbox]")
+      .forEach((cb) => (cb.checked = false))
+  );
 }
 
 async function start(user) {
@@ -394,16 +592,51 @@ async function start(user) {
     renderHeader();
     renderMembers();
     await ensurePantryDefaults();
-
-    // Live updates (handles admin deletes/edits immediately)
-    onSnapshot(groupRef(), (snap) => {
-      if (!snap.exists()) return;
-      state.groupDoc = { id: snap.id, ref: groupRef(), ...snap.data() };
-      computeIsAdmin();
-      renderPantry();
-    });
-
     renderPantry();
+    updateMembershipButtons();
+
+    // Live updates: entire group, not just pantry
+    onSnapshot(groupRef(), (snap) => {
+      const hasPending = snap.metadata.hasPendingWrites;
+      const data = snap.data() || null;
+
+      console.log("GROUP SNAPSHOT", {
+        hasPendingWrites: hasPending,
+        users: Array.isArray(data?.users) ? data.users.map((u) => u.uid) : [],
+      });
+
+      // Handle deletion – but ONLY after the server has confirmed it
+      const isDeletedDoc = !snap.exists() || !!data?.deletedAt;
+      if (isDeletedDoc) {
+        if (!hasPending) {
+          alert("This group has been deleted.");
+          window.location.href = "/groups.html";
+        }
+        return;
+      }
+
+      // Normal, non-deleted document path
+      state.groupDoc = { id: snap.id, ref: groupRef(), ...data };
+      computeIsAdmin();
+
+      const uid = state.currentUser?.uid;
+      const users = Array.isArray(state.groupDoc.users)
+        ? state.groupDoc.users
+        : [];
+      const isMember = !!uid && users.some((u) => u.uid === uid);
+
+      // Only kick members out after confirmed updates (same as leave)
+      if (!hasPending && uid && !isMember && uid !== state.groupDoc.ownerUid) {
+        alert("You are no longer a member of this group.");
+        window.location.href = "/groups.html";
+        return;
+      }
+
+      renderHeader();
+      renderMembers();
+      renderPantry();
+      updateMembershipButtons();
+    });
   } catch (e) {
     console.error(e);
     setTxt("#groupName", "Error loading group.");
@@ -412,5 +645,7 @@ async function start(user) {
 
 document.addEventListener("DOMContentLoaded", () => {
   wire();
-  onAuthStateChanged(getAuth(), (user) => { start(user); });
+  onAuthStateChanged(getAuth(), (user) => {
+    start(user);
+  });
 });

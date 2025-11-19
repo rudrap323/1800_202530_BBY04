@@ -15,16 +15,20 @@ export async function loginUser(email, password) {
 }
 
 export async function signupUser(name, email, password) {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const user = userCredential.user; // Get the user object
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
+  const user = userCredential.user;
   await updateProfile(user, { displayName: name });
 
   try {
     await setDoc(doc(db, "users", user.uid), {
       name: name,
       email: email,
-      country: "Canada", // Default value
-      school: "BCIT"     // Default value
+      country: "Canada",
+      school: "BCIT",
     });
     console.log("Firestore user document created successfully!");
   } catch (error) {
@@ -74,16 +78,18 @@ export function authErrorMessage(error) {
   return map[code] || "Something went wrong. Please try again.";
 }
 
-let authReadyResolver = [];
-export const whenAuthReady = new Promise((res) => authReadyResolvers.push(res));
+// Keep track of functions waiting for auth to be ready
+let authReadyResolvers = [];
+
+export const whenAuthReady = new Promise((res) =>
+  authReadyResolvers.push(res)
+);
 
 export function initializeAuthState(onUserChange) {
-  // Call with a callback to get current user updates.
   onAuthStateChanged(auth, (user) => {
-    // notify
     if (typeof onUserChange === "function") onUserChange(user);
     // Resolve any waiters (only once).
-    while (authReadyResolvers.length) authReadyResolvers.shift()();
+    while (authReadyResolvers.length) authReadyResolvers.shift()(user);
   });
 }
 
