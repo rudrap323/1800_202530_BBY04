@@ -565,7 +565,7 @@ async function onRemoveMember(uid, displayName) {
    ========================================================= */
 function wire() {
   $("#openChatBtn")?.addEventListener("click", () => {
-    alert("Group chat is not implemented in this template.");
+    window.location.href = `/groupChat.html?docID=${encodeURIComponent(state.groupId)}`;
   });
 
   $("#leaveBtn")?.addEventListener("click", onLeaveGroupClick);
