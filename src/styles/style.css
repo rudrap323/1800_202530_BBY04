@@ -39,7 +39,6 @@ img { max-width: 100%; display: block; }
 
 .topbar .wrap { display:flex; align-items:center; justify-content:space-between; padding:10px 0; }
 .brand { display:flex; align-items:center; gap:8px; font-weight:700; }
-.logo { width:28px; height:28px; display:grid; place-items:center; background:var(--oak-600); color:#fff; border-radius:6px; }
 
 .menu-btn { display:none; background:transparent; border:0; color:#fff; font-size:22px; padding:6px 10px; }
 .nav { display:flex; gap:16px; }
@@ -97,14 +96,14 @@ img { max-width: 100%; display: block; }
 
 .card{ background:#fff; border:2px solid #eadfda; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; } /* single, global definition */
 .photo{ aspect-ratio:3/4; background:#e9e1db; }
-.photo.a{ background-image:url("public/images/ryan.png?q=80&w=800&auto=format&fit=crop"); background-size:cover; background-position:center; }
-.photo.b{ background-image:url("public/images/gurkirit.png?q=80&w=800&auto=format&fit=crop"); background-size:cover; background-position:center; }
+.photo.a{ background-image:url("https://images.unsplash.com/photo-1544168190-79c17527004f?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?q=80&w=800&auto=format&fit=crop"); background-size:cover; background-position:center; }
+.photo.b{ background-image:url("https://images.unsplash.com/photo-1763403063428-10184adc7be3?q=80&w=627&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?q=80&w=800&auto=format&fit=crop"); background-size:cover; background-position:center; }
 .photo.c{ background-image:url("https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=800&auto=format&fit=crop"); background-size:cover; background-position:center; }
 .content{ padding:12px; }
 .content h4{ margin:0 0 6px; }
 .content p{ margin:0; color:var(--muted); }
 .foot{ padding:10px 12px 12px; color:var(--muted); font-size:14px; border-top:1px solid #eadfda; }
-
+.logo-image{ width:128px; height:auto; }
 /* ---------- Leave & Delete Group Buttons ---------- */
 #leaveBtn,
 #deleteBtn {
@@ -175,6 +174,7 @@ body {
    Header bar (matches topbar)
 ------------------------------------------------------- */
 #title_container {
+  /* background: var(--oak-800); */
   background: var(--oak-800);
   color: var(--white);
   border-bottom: 4px solid var(--oak-600);

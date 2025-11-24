@@ -28,8 +28,7 @@ class SiteNavbar extends HTMLElement {
             <header class="topbar">
               <div class="wrap">
                 <div class="brand">
-                  <div class="logo" aria-hidden="true">🍞</div>
-                  <span>Pantry Tracker</span>
+                  <img src="/public/images/logowhite.png" alt="Pantry Tracker Logo" class="logo-image"/>
                 </div>
 
                 <button class="menu-btn" aria-label="Menu" aria-expanded="false">
