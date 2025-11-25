@@ -1,6 +1,3 @@
-// -------------------------------------------------------------
-// src/groups.js
-// -------------------------------------------------------------
 // Firestore helpers to create groups and let users join them.
 // Groups store BOTH a snapshot of member info (users[]) for fast render
 // and a parallel uid list (userUids[]) so we can query by membership.

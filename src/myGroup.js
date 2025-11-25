@@ -11,7 +11,6 @@ import {
   getDocs,
   onSnapshot,
   deleteField,
-  documentId,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
@@ -52,7 +51,11 @@ const state = {
   currentUser: null,
   isAdmin: false,
 
+  // uid -> latest profile data
   memberProfileMap: new Map(),
+
+  // uid -> unsubscribe function (so we can stop listeners when members change)
+  memberProfileUnsubs: new Map(),
 };
 
 const groupRef = () => doc(db, "groups", state.groupId);
@@ -108,39 +111,50 @@ const deleteItem = (key) =>
     pantryUpdatedAt: serverTimestamp(),
   });
 
-
-async function hydrateMemberProfiles() {
+/* =========================================================
+   - This is what makes photo/name edits update instantly.
+   ========================================================= */
+function startRealtimeProfileListenersForMembers() {
   const users = Array.isArray(state.groupDoc?.users)
     ? state.groupDoc.users
     : [];
 
-  const uids = users.map((u) => u?.uid).filter(Boolean);
-  if (!uids.length) {
-    state.memberProfileMap.clear();
-    return;
+  const currentUids = new Set(users.map((u) => u?.uid).filter(Boolean));
+
+  // 1) Stop listeners for users who left
+  for (const [uid, unsub] of state.memberProfileUnsubs.entries()) {
+    if (!currentUids.has(uid)) {
+      try { unsub(); } catch {}
+      state.memberProfileUnsubs.delete(uid);
+      state.memberProfileMap.delete(uid);
+    }
   }
 
-  // Firestore "in" queries allow max 10 ids at a time -> chunk
-  const chunks = [];
-  for (let i = 0; i < uids.length; i += 10) {
-    chunks.push(uids.slice(i, i + 10));
-  }
+  // 2) Start listeners for new users
+  for (const uid of currentUids) {
+    if (state.memberProfileUnsubs.has(uid)) continue;
 
-  const nextMap = new Map();
+    // If you used Option B (publicUsers),
+    // change "users" -> "publicUsers" here:
+    const uref = doc(db, "users", uid);
 
-  for (const chunk of chunks) {
-    const qy = query(
-      collection(db, "users"),
-      where(documentId(), "in", chunk)
+    const unsub = onSnapshot(
+      uref,
+      (snap) => {
+        if (snap.exists()) {
+          state.memberProfileMap.set(uid, snap.data());
+        } else {
+          state.memberProfileMap.delete(uid);
+        }
+        renderMembers();
+      },
+      (err) => {
+        console.warn("Profile listener error for uid:", uid, err);
+      }
     );
-    const snap = await getDocs(qy);
 
-    snap.forEach((d) => {
-      nextMap.set(d.id, d.data());
-    });
+    state.memberProfileUnsubs.set(uid, unsub);
   }
-
-  state.memberProfileMap = nextMap;
 }
 
 /* =========================================================
@@ -193,6 +207,7 @@ function renderMembers() {
     })
     .forEach((m) => {
       const chip = tpl.content.cloneNode(true);
+
       const live = state.memberProfileMap.get(m.uid) || {};
 
       const displayName = live.displayName || m.displayName;
@@ -277,6 +292,9 @@ async function onLeaveGroupClick() {
     });
 
     state.groupDoc.users = nextUsers;
+
+    startRealtimeProfileListenersForMembers();
+
     updateMembershipButtons();
   } catch (err) {
     console.error("Failed to leave group:", err);
@@ -586,7 +604,9 @@ async function onRemoveMember(uid, displayName) {
     });
 
     state.groupDoc.users = next;
-    await hydrateMemberProfiles();
+
+    startRealtimeProfileListenersForMembers();
+
     renderMembers();
     alert("Member removed.");
   } catch (e) {
@@ -627,7 +647,7 @@ async function start(user) {
   try {
     await loadGroup();
 
-    await hydrateMemberProfiles();
+    startRealtimeProfileListenersForMembers();
 
     renderHeader();
     renderMembers();
@@ -663,7 +683,7 @@ async function start(user) {
         return;
       }
 
-      await hydrateMemberProfiles();
+      startRealtimeProfileListenersForMembers();
 
       renderHeader();
       renderMembers();

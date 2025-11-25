@@ -2,6 +2,7 @@ import { db } from "./firebaseConfig.js";
 import {
   doc,
   getDoc,
+  setDoc,
   updateDoc,
   serverTimestamp,
   onSnapshot,
@@ -45,11 +46,42 @@ const userRef = () => doc(db, "users", state.profileUid);
    Firestore: load profile + groups
    ========================================================= */
 async function loadProfile() {
-  const snap = await getDoc(userRef());
-  if (!snap.exists()) throw new Error("User profile not found");
-  state.profileDoc = { id: snap.id, ref: userRef(), ...snap.data() };
+  const ref = userRef();
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    if (!state.isMe || !state.currentUser) {
+      throw new Error("User profile not found");
+    }
+
+    const au = state.currentUser;
+
+    const username =
+      au.displayName ||
+      (au.email ? au.email.split("@")[0] : "user");
+
+    const seedProfile = {
+      username,
+      displayName: au.displayName || username,
+      photoURL: au.photoURL || null,
+      email: au.email || null,
+      bio: "",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await setDoc(ref, seedProfile, { merge: true });
+
+    // re-read so state is consistent
+    const fresh = await getDoc(ref);
+    state.profileDoc = { id: fresh.id, ref, ...fresh.data() };
+    return state.profileDoc;
+  }
+
+  state.profileDoc = { id: snap.id, ref, ...snap.data() };
   return state.profileDoc;
 }
+
 
 /* =========================================================
    Rendering (mirrors myGroup render rhythm)
