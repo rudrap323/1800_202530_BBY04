@@ -8,7 +8,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { db } from "/src/firebaseConfig.js";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export async function loginUser(email, password) {
   return signInWithEmailAndPassword(auth, email, password);
@@ -21,14 +21,25 @@ export async function signupUser(name, email, password) {
     password
   );
   const user = userCredential.user;
+
+  // auth displayName
   await updateProfile(user, { displayName: name });
+
+  // default username fallback
+  const username =
+    (name || "").trim() || (email ? email.split("@")[0] : "user");
 
   try {
     await setDoc(doc(db, "users", user.uid), {
-      name: name,
-      email: email,
+      username,
+      displayName: name,
+      photoURL: user.photoURL || null,
+      name,
+      email,
       country: "Canada",
       school: "BCIT",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
     console.log("Firestore user document created successfully!");
   } catch (error) {
@@ -47,7 +58,9 @@ export function checkAuthState() {
   onAuthStateChanged(auth, (user) => {
     if (window.location.pathname.endsWith("main.html")) {
       if (user) {
-        const displayName = user.displayName || user.email;
+        const displayName =
+          user.displayName ||
+          (user.email ? user.email.split("@")[0] : "user");
         $("#welcomeMessage").text(`Hello, ${displayName}!`);
       } else {
         window.location.href = "index.html";
@@ -88,7 +101,6 @@ export const whenAuthReady = new Promise((res) =>
 export function initializeAuthState(onUserChange) {
   onAuthStateChanged(auth, (user) => {
     if (typeof onUserChange === "function") onUserChange(user);
-    // Resolve any waiters (only once).
     while (authReadyResolvers.length) authReadyResolvers.shift()(user);
   });
 }

@@ -11,6 +11,7 @@ import {
   getDocs,
   onSnapshot,
   deleteField,
+  documentId,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
@@ -45,7 +46,15 @@ const slug = (s) =>
     .replace(/--+/g, "-")
     .slice(0, 40);
 
-const state = { groupId: null, groupDoc: null, currentUser: null, isAdmin: false };
+const state = {
+  groupId: null,
+  groupDoc: null,
+  currentUser: null,
+  isAdmin: false,
+
+  memberProfileMap: new Map(),
+};
+
 const groupRef = () => doc(db, "groups", state.groupId);
 
 /* =========================================================
@@ -99,6 +108,41 @@ const deleteItem = (key) =>
     pantryUpdatedAt: serverTimestamp(),
   });
 
+
+async function hydrateMemberProfiles() {
+  const users = Array.isArray(state.groupDoc?.users)
+    ? state.groupDoc.users
+    : [];
+
+  const uids = users.map((u) => u?.uid).filter(Boolean);
+  if (!uids.length) {
+    state.memberProfileMap.clear();
+    return;
+  }
+
+  // Firestore "in" queries allow max 10 ids at a time -> chunk
+  const chunks = [];
+  for (let i = 0; i < uids.length; i += 10) {
+    chunks.push(uids.slice(i, i + 10));
+  }
+
+  const nextMap = new Map();
+
+  for (const chunk of chunks) {
+    const qy = query(
+      collection(db, "users"),
+      where(documentId(), "in", chunk)
+    );
+    const snap = await getDocs(qy);
+
+    snap.forEach((d) => {
+      nextMap.set(d.id, d.data());
+    });
+  }
+
+  state.memberProfileMap = nextMap;
+}
+
 /* =========================================================
    Rendering: header, members, pantry, grocery
    ========================================================= */
@@ -127,7 +171,6 @@ function renderHeader() {
     img.alt = `${g.name || "Group"} image`;
   }
 
-  // Admin panel visibility + seed inputs
   const panel = $("#adminPanel");
   if (panel) panel.classList[state.isAdmin ? "remove" : "add"]("d-none");
   const rename = $("#renameInput");
@@ -150,12 +193,24 @@ function renderMembers() {
     })
     .forEach((m) => {
       const chip = tpl.content.cloneNode(true);
+      const live = state.memberProfileMap.get(m.uid) || {};
+
+      const displayName = live.displayName || m.displayName;
+      const username = live.username || m.username;
+      const email = live.email || m.email;
+      const photoURL = live.photoURL || m.photoURL;
+
+      const fallbackName =
+        displayName ||
+        username ||
+        (email ? email.split("@")[0] : null) ||
+        "Member";
+
       chip.querySelector(".avatar").src =
-        m.photoURL || "/images/avatar-placeholder.png";
-      chip.querySelector(".avatar").alt = `${
-        m.displayName || "Member"
-      } avatar`;
-      chip.querySelector(".name").textContent = m.displayName || "Member";
+        photoURL || "/images/avatar-placeholder.png";
+      chip.querySelector(".avatar").alt = `${fallbackName} avatar`;
+      chip.querySelector(".name").textContent = fallbackName;
+
       const isOwner = m.uid === state.groupDoc?.ownerUid;
       const roleEl = chip.querySelector(".role");
       if (roleEl) roleEl.textContent = isOwner ? " • owner" : "";
@@ -163,7 +218,7 @@ function renderMembers() {
       const removeBtn = chip.querySelector(".remove");
       if (state.isAdmin && !isOwner)
         removeBtn.addEventListener("click", () =>
-          onRemoveMember(m.uid, m.displayName)
+          onRemoveMember(m.uid, fallbackName)
         );
       else removeBtn.remove();
 
@@ -183,16 +238,11 @@ function updateMembershipButtons() {
     ? state.groupDoc.users
     : [];
 
-  const isOwner = uid && state.groupDoc?.ownerUid === uid;
   const isAdmin = state.isAdmin;
   const isMember = !!uid && users.some((u) => u.uid === uid);
 
-  // Admins/owner can delete the group
-  if (deleteBtn) {
-    deleteBtn.classList[isAdmin ? "remove" : "add"]("d-none");
-  }
+  if (deleteBtn) deleteBtn.classList[isAdmin ? "remove" : "add"]("d-none");
 
-  // Regular members can leave; admins/owner don’t use the leave button
   if (leaveBtn) {
     const showLeave = !isAdmin && isMember;
     leaveBtn.classList[showLeave ? "remove" : "add"]("d-none");
@@ -215,29 +265,22 @@ async function onLeaveGroupClick() {
     const nextUsers = users.filter((u) => u && u.uid !== uid);
 
     if (nextUsers.length === users.length) {
-      console.warn("LeaveGroup: current user not found in state.groupDoc.users", {
-        uid,
-        users,
-      });
       alert("You are not currently listed as a member of this group.");
       return;
     }
 
     await updateDoc(groupRef(), {
       users: nextUsers,
-      pantryUpdatedAt: serverTimestamp(), // keep parity with inventory
+      userUids: nextUsers.map((u) => u.uid),
+      pantryUpdatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
 
-    // Keep local state in sync until snapshot arrives
     state.groupDoc.users = nextUsers;
     updateMembershipButtons();
   } catch (err) {
-    console.error(
-      "Failed to leave group:",
-      err.code || err.name,
-      err.message || err
-    );
-    alert("Failed to leave the group. Check the console for error details.");
+    console.error("Failed to leave group:", err);
+    alert("Failed to leave the group. Check console for details.");
   }
 }
 
@@ -249,18 +292,10 @@ async function onDeleteGroupClick() {
   if (!confirm("Delete this group? This cannot be undone!")) return;
 
   try {
-    // Soft-delete: mark as deleted instead of hard delete
-    await updateDoc(groupRef(), {
-      deletedAt: serverTimestamp(),
-    });
-    // onSnapshot will handle redirects when confirmed
+    await updateDoc(groupRef(), { deletedAt: serverTimestamp() });
   } catch (err) {
-    console.error(
-      "Failed to delete group:",
-      err.code || err.name,
-      err.message || err
-    );
-    alert("Failed to delete the group. Check console for details.");
+    console.error("Failed to delete group:", err);
+    alert("Failed to delete the group.");
   }
 }
 
@@ -302,11 +337,9 @@ function renderPantry() {
     const item = p[k];
     const tr = document.createElement("tr");
 
-    // name
     const tdName = document.createElement("td");
     tdName.textContent = item.name || k;
 
-    // amount (number input)
     const tdAmount = document.createElement("td");
     tdAmount.className = "text-end";
     const amt = document.createElement("input");
@@ -320,7 +353,6 @@ function renderPantry() {
     amt.addEventListener("change", () => onUpdateAmount(k, Number(amt.value)));
     tdAmount.appendChild(amt);
 
-    // unit (text input)
     const tdUnit = document.createElement("td");
     const unit = document.createElement("input");
     Object.assign(unit, {
@@ -332,7 +364,6 @@ function renderPantry() {
     unit.addEventListener("change", () => onUpdateUnit(k, unit.value));
     tdUnit.appendChild(unit);
 
-    // baseline (admin only)
     const tdBase = document.createElement("td");
     tdBase.className = "text-end";
     const base = document.createElement("input");
@@ -349,7 +380,6 @@ function renderPantry() {
     );
     tdBase.appendChild(base);
 
-    // actions
     const tdAct = document.createElement("td");
     const mkBtn = (txt, klass, cb) => {
       const b = document.createElement("button");
@@ -392,7 +422,7 @@ function renderGrocery() {
     const li = document.createElement("li");
     li.className = "grocery-item";
     const cb = document.createElement("input");
-    cb.type = "checkbox"; // UI-only
+    cb.type = "checkbox";
     const label = document.createElement("div");
     label.innerHTML = `${name} <span class="qty">${need}${
       unit ? " " + unit : ""
@@ -429,10 +459,7 @@ async function onAddItem(e) {
         ...existing,
         name,
         unit,
-        amount: Math.max(
-          0,
-          Math.floor((existing.amount || 0) + amount)
-        ),
+        amount: Math.max(0, Math.floor((existing.amount || 0) + amount)),
       }
     : { name, unit, amount: Math.floor(amount), baseline: 0 };
   await upsertItem(key, next);
@@ -517,8 +544,8 @@ async function onSaveJoinKey() {
   if (!state.isAdmin) return alert("Only the owner can change the join name.");
   const raw = ($("#joinKeyInput")?.value || "").trim();
   const newKey = slug(raw);
-  if (!newKey)
-    return alert("Join name is required (letters/numbers and dashes).");
+  if (!newKey) return alert("Join name is required.");
+
   if (newKey === (state.groupDoc.joinKey || state.groupId))
     return alert("Join name is unchanged.");
 
@@ -530,7 +557,7 @@ async function onSaveJoinKey() {
     );
     const snap = await getDocs(q);
     if (!snap.empty && snap.docs[0].id !== state.groupId)
-      return alert("That join name is already taken. Try another.");
+      return alert("That join name is already taken.");
     await updateDoc(groupRef(), { joinKey: newKey });
     state.groupDoc.joinKey = newKey;
     renderHeader();
@@ -545,13 +572,21 @@ async function onRemoveMember(uid, displayName) {
   if (!state.isAdmin) return alert("Only the owner can remove members.");
   if (!uid || !confirm(`Remove ${displayName || "this user"} from the group?`))
     return;
+
   try {
     const next = (Array.isArray(state.groupDoc.users)
       ? state.groupDoc.users
       : []
     ).filter((u) => u.uid !== uid);
-    await updateDoc(groupRef(), { users: next });
+
+    await updateDoc(groupRef(), {
+      users: next,
+      userUids: next.map((u) => u.uid),
+      updatedAt: serverTimestamp(),
+    });
+
     state.groupDoc.users = next;
+    await hydrateMemberProfiles();
     renderMembers();
     alert("Member removed.");
   } catch (e) {
@@ -565,7 +600,9 @@ async function onRemoveMember(uid, displayName) {
    ========================================================= */
 function wire() {
   $("#openChatBtn")?.addEventListener("click", () => {
-    window.location.href = `/groupChat.html?docID=${encodeURIComponent(state.groupId)}`;
+    window.location.href = `/groupChat.html?docID=${encodeURIComponent(
+      state.groupId
+    )}`;
   });
 
   $("#leaveBtn")?.addEventListener("click", onLeaveGroupClick);
@@ -589,23 +626,19 @@ async function start(user) {
 
   try {
     await loadGroup();
+
+    await hydrateMemberProfiles();
+
     renderHeader();
     renderMembers();
     await ensurePantryDefaults();
     renderPantry();
     updateMembershipButtons();
 
-    // Live updates: entire group, not just pantry
-    onSnapshot(groupRef(), (snap) => {
+    onSnapshot(groupRef(), async (snap) => {
       const hasPending = snap.metadata.hasPendingWrites;
       const data = snap.data() || null;
 
-      console.log("GROUP SNAPSHOT", {
-        hasPendingWrites: hasPending,
-        users: Array.isArray(data?.users) ? data.users.map((u) => u.uid) : [],
-      });
-
-      // Handle deletion – but ONLY after the server has confirmed it
       const isDeletedDoc = !snap.exists() || !!data?.deletedAt;
       if (isDeletedDoc) {
         if (!hasPending) {
@@ -615,7 +648,6 @@ async function start(user) {
         return;
       }
 
-      // Normal, non-deleted document path
       state.groupDoc = { id: snap.id, ref: groupRef(), ...data };
       computeIsAdmin();
 
@@ -625,12 +657,13 @@ async function start(user) {
         : [];
       const isMember = !!uid && users.some((u) => u.uid === uid);
 
-      // Only kick members out after confirmed updates (same as leave)
       if (!hasPending && uid && !isMember && uid !== state.groupDoc.ownerUid) {
         alert("You are no longer a member of this group.");
         window.location.href = "/groups.html";
         return;
       }
+
+      await hydrateMemberProfiles();
 
       renderHeader();
       renderMembers();

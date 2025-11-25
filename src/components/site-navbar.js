@@ -60,7 +60,8 @@ class SiteNavbar extends HTMLElement {
 
                 <nav class="nav">
                   <a href="indexloggedin.html" class="active">Home</a>
-                  <a href="main.html" class="active">Your Pantry</a>
+                  <a href="main.html" class="active">Your Groups</a>
+                  <a href="profile.html" class="active">Profile</a>
                   <a href="#features">Features</a>
                   <a href="#learn-more">Learn More</a>
                 </nav>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Profile</title>
+    <meta name="comp1800 template" content="My 1800 App" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Same stylesheet + shared components as myGroup -->
+    <link rel="stylesheet" href="src/styles/style.css" />
+    <script type="module" src="/src/components/site-navbar.js"></script>
+    <script type="module" src="/src/components/site-footer.js"></script>
+  </head>
+
+  <body>
+    <site-navbar></site-navbar>
+
+    <main class="container py-4">
+      <!-- Header -->
+      <h1 id="profileName">Loading profile…</h1>
+
+      <!-- Banner / Avatar -->
+      <img
+        id="profileImage"
+        class="img-fluid rounded mt-3 d-block mx-auto"
+        src=""
+        alt="User avatar"
+      />
+
+      <!-- Meta -->
+      <div class="mt-3 meta" id="profileMeta"></div>
+
+      <!-- Edit panel (mirrors myGroup admin panel) -->
+      <section id="editPanel" class="mt-4 d-none">
+        <h2 class="h4">Edit Profile</h2>
+
+        <!-- Display name -->
+        <div class="d-flex gap-2 align-items-center">
+          <input
+            id="displayNameInput"
+            type="text"
+            class="form-control"
+            placeholder="Display name"
+          />
+          <button id="saveDisplayNameBtn" class="btn btn-primary">
+            Save
+          </button>
+        </div>
+        <div class="meta mt-1">This is how others see you in groups.</div>
+
+        <!-- Bio -->
+        <div class="mt-3">
+          <textarea
+            id="bioInput"
+            class="form-control"
+            rows="3"
+            placeholder="Short bio (optional)"
+          ></textarea>
+          <button id="saveBioBtn" class="btn btn-secondary mt-2">
+            Save Bio
+          </button>
+        </div>
+
+        <!-- Photo URL -->
+        <div class="mt-3 d-flex gap-2 align-items-center">
+          <input
+            id="photoUrlInput"
+            type="text"
+            class="form-control"
+            placeholder="Photo URL (optional)"
+          />
+          <button id="savePhotoBtn" class="btn btn-secondary">
+            Save Photo
+          </button>
+        </div>
+        <div class="meta mt-1">
+          Paste an image URL to update your avatar.
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <div class="mt-3 d-flex gap-2">
+        <button id="goGroupsBtn" class="btn btn-primary">
+          My Groups
+        </button>
+        <button id="signOutBtn" class="btn btn-outline-danger">
+          Sign Out
+        </button>
+      </div>
+
+      <!-- About -->
+      <section class="mt-4">
+        <h2 class="h4">About me</h2>
+        <p id="profileBio">—</p>
+      </section>
+
+      <!-- Groups -->
+      <section class="mt-4">
+        <h2 class="h4">My Groups</h2>
+        <div id="groupChips"></div>
+      </section>
+    </main>
+
+    <!-- Templates (same chip idea as myGroup) -->
+    <template id="groupChipTemplate">
+      <span class="member-chip">
+        <img class="avatar" alt="group avatar" />
+        <span class="name">Group Name</span>
+        <span class="role meta"></span>
+      </span>
+    </template>
+
+    <site-footer></site-footer>
+
+    <!-- App scripts -->
+    <script type="module" src="/src/app.js"></script>
+    <script type="module" src="/src/profile.js"></script>
+  </body>
+</html>

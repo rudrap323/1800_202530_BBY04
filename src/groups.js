@@ -2,8 +2,8 @@
 // src/groups.js
 // -------------------------------------------------------------
 // Firestore helpers to create groups and let users join them.
-// Patterned after signupUser in src/authentication.js
-// (uses setDoc on a deterministic document id and stores metadata).
+// Groups store BOTH a snapshot of member info (users[]) for fast render
+// and a parallel uid list (userUids[]) so we can query by membership.
 // -------------------------------------------------------------
 
 import { auth, db } from "/src/firebaseConfig.js";
@@ -21,11 +21,12 @@ import {
  * Example: "Team Alpha" -> "team-alpha"
  */
 function groupIdFromName(name) {
-  return name
+  return (name || "")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 /**
@@ -33,10 +34,11 @@ function groupIdFromName(name) {
  * Schema:
  * {
  *   name: string,
- *   password: string,        // NOTE: plaintext per your requirement
+ *   password: string, // plaintext per your requirement
  *   createdAt: Timestamp,
  *   ownerUid: string|null,
- *   users: [ { uid, displayName, email, joinedAt } ]
+ *   users: [ { uid, username, displayName, photoURL, email, joinedAt } ],
+ *   userUids: [uid, uid, ...] // for array-contains queries
  * }
  *
  * Returns the group doc id.
@@ -45,7 +47,6 @@ export async function createGroup(name, password) {
   if (!name || !password) {
     throw new Error("Group name and password are required.");
   }
-  const uid = auth.currentUser?.uid || null;
 
   const gid = groupIdFromName(name);
   const ref = doc(db, "groups", gid);
@@ -55,14 +56,28 @@ export async function createGroup(name, password) {
     throw new Error("A group with that name already exists.");
   }
 
-  const userEntry = uid
-    ? {
-        uid,
-        displayName: auth.currentUser.displayName || null,
-        email: auth.currentUser.email || null,
-        joinedAt: new Date(),
-      }
-    : null;
+  const uid = auth.currentUser?.uid || null;
+
+  let userEntry = null;
+  if (uid) {
+    const uref = doc(db, "users", uid);
+    const usnap = await getDoc(uref);
+    const udoc = usnap.exists() ? usnap.data() : {};
+
+    const username =
+      udoc.username ||
+      auth.currentUser.displayName ||
+      (auth.currentUser.email ? auth.currentUser.email.split("@")[0] : "user");
+
+    userEntry = {
+      uid,
+      username,
+      displayName: udoc.displayName || auth.currentUser.displayName || username,
+      photoURL: udoc.photoURL || auth.currentUser.photoURL || null,
+      email: auth.currentUser.email || udoc.email || null,
+      joinedAt: new Date(),
+    };
+  }
 
   const data = {
     name: name.trim(),
@@ -70,6 +85,7 @@ export async function createGroup(name, password) {
     createdAt: serverTimestamp(),
     ownerUid: uid,
     users: userEntry ? [userEntry] : [],
+    userUids: uid ? [uid] : [],
   };
 
   await setDoc(ref, data);
@@ -78,7 +94,7 @@ export async function createGroup(name, password) {
 
 /**
  * Join an existing group by name + password.
- * Adds the current user to users[] if not already present.
+ * Adds the current user to users[]/userUids[] if not already present.
  * Returns the group doc id.
  */
 export async function joinGroup(name, password) {
@@ -94,31 +110,37 @@ export async function joinGroup(name, password) {
   const ref = doc(db, "groups", gid);
   const snap = await getDoc(ref);
 
-  if (!snap.exists()) {
-    throw new Error("Group not found.");
-  }
+  if (!snap.exists()) throw new Error("Group not found.");
 
   const group = snap.data();
-
-  if (group.deletedAt) {
-    throw new Error("This group has been deleted.");
-  }
-
-  if (group.password !== password) {
-    throw new Error("Incorrect group password.");
-  }
+  if (group.deletedAt) throw new Error("This group has been deleted.");
+  if (group.password !== password) throw new Error("Incorrect group password.");
 
   const alreadyMember =
     Array.isArray(group.users) && group.users.some((u) => u?.uid === uid);
 
   if (!alreadyMember) {
+    const uref = doc(db, "users", uid);
+    const usnap = await getDoc(uref);
+    const udoc = usnap.exists() ? usnap.data() : {};
+
+    const username =
+      udoc.username ||
+      auth.currentUser.displayName ||
+      (auth.currentUser.email ? auth.currentUser.email.split("@")[0] : "user");
+
     await updateDoc(ref, {
       users: arrayUnion({
         uid,
-        displayName: auth.currentUser.displayName || null,
-        email: auth.currentUser.email || null,
+        username,
+        displayName:
+          udoc.displayName || auth.currentUser.displayName || username,
+        photoURL: udoc.photoURL || auth.currentUser.photoURL || null,
+        email: auth.currentUser.email || udoc.email || null,
         joinedAt: new Date(),
       }),
+      userUids: arrayUnion(uid),
+      updatedAt: serverTimestamp(),
     });
   }
 
