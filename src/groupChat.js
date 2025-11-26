@@ -1,6 +1,6 @@
 import { db } from "./firebaseConfig.js";
 import {
-  collection, addDoc, serverTimestamp,
+  collection, doc, getDoc, addDoc, serverTimestamp,
   query, orderBy, onSnapshot
 } from "firebase/firestore";
 
@@ -21,6 +21,29 @@ if (!groupId) {
   document.body.innerHTML = "<h2>Invalid group.</h2>";
   throw new Error("Missing docID in URL");
 }
+
+/* ----------------------------------------------------
+   Load profile pic for current user
+---------------------------------------------------- */
+let currentUserPic = "/images/default_user.png";
+
+async function loadUserProfilePic(uid){
+  try {
+   const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
+
+    if (snap.exists()) {
+      const data = snap.data();
+
+      if (data.photoURL) {
+        currentUserPic = data.photoURL;   // << REAL PROFILE PIC
+      }
+    }
+  } catch (err) {
+    console.error("Error loading user profile pic:", err);
+  }
+  
+} 
 
 /* ----------------------------------------------------
    Build chat UI
@@ -59,44 +82,50 @@ function renderMessages(msgList, currentUid) {
   box.innerHTML = "";
 
   msgList.forEach((m) => {
-    try {
-      const wrapper = document.createElement("div");
-      const isYou = m.uid && currentUid && m.uid === currentUid;
+    const wrapper = document.createElement("div");
+    wrapper.className = "msg-wrapper";
 
-      if (!isYou) {
-        const name = document.createElement("div");
-        name.className = "msg-username";
-        name.textContent = m.user || "Unknown";
-        wrapper.appendChild(name);
-      }
+    const isYou = m.uid === currentUid;
 
-      const bubble = document.createElement("div");
-      bubble.className = `message ${isYou ? "you" : "other"}`;
-      bubble.textContent = m.text || "";
-      wrapper.appendChild(bubble);
+    // --- Profile picture ---
+    const img = document.createElement("img");
+    img.className = "msg-pfp";
 
-      if (m.timestamp) {
-        let tsText = "";
-        try {
-          if (m.timestamp.toDate) {
-            tsText = m.timestamp
-              .toDate()
-              .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          }
-        } catch (_) {}
+    img.src = m.photoURL || "/images/default-user.png";
 
-        if (tsText) {
-          const timeEl = document.createElement("div");
-          timeEl.className = "msg-time";
-          timeEl.textContent = tsText;
-          wrapper.appendChild(timeEl);
-        }
-      }
-
-      box.appendChild(wrapper);
-    } catch (err) {
-      console.error("Render message error:", err, m);
+    // --- Username for other users only ---
+    if (!isYou) {
+      const name = document.createElement("div");
+      name.className = "msg-username";
+      name.textContent = m.user || m.displayName || "Unknown";
+      wrapper.appendChild(name);
     }
+
+    // --- Row container ---
+    const row = document.createElement("div");
+    row.className = `msg-row ${isYou ? "row-you" : "row-other"}`;
+    row.appendChild(img);
+
+    // --- Message bubble ---
+    const bubble = document.createElement("div");
+    bubble.className = `message ${isYou ? "you" : "other"}`;
+    bubble.textContent = m.text || "";
+    row.appendChild(bubble);
+
+    wrapper.appendChild(row);
+
+    // --- Timestamp ---
+    if (m.timestamp?.toDate) {
+      const timeEl = document.createElement("div");
+      timeEl.className = "msg-time";
+      timeEl.textContent = m.timestamp
+        .toDate()
+        .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+      wrapper.appendChild(timeEl);
+    }
+
+    box.appendChild(wrapper);
   });
 
   box.scrollTop = box.scrollHeight;
@@ -112,6 +141,11 @@ onAuthStateChanged(getAuth(), async (user) => {
   }
 
   const username = user.displayName || "User";
+
+  /* ----------------------------------------------------
+   Load current user's profile picture
+  ---------------------------------------------------- */
+  await loadUserProfilePic(user.uid);
 
   // 1️⃣ Build UI FIRST
   buildChatUI(username);
@@ -155,6 +189,8 @@ onAuthStateChanged(getAuth(), async (user) => {
       user: username,
       uid: user.uid,
       text,
+      //include profilePic in message
+      photoURL: currentUserPic,
       timestamp: serverTimestamp()
     }).catch(err => console.error("Send error:", err));
 

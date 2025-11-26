@@ -364,6 +364,47 @@ body {
   border-bottom-left-radius: 4px;
 }
 
+/* -------------------------------------------------------
+  Profile pictures beside messages
+   ------------------------------------------------------- */
+
+/* A row that contains: [pfp] [message bubble] */
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+/* Reverse direction when it's YOUR message */
+.msg-row.you {
+  flex-direction: row-reverse;
+}
+
+/* Profile picture styling */
+.msg-pfp {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--oak-300);
+}
+
+/* Wrap bubble + timestamp */
+.msg-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+}
+
+/* Timestamp under bubble */
+.msg-time {
+  font-size: 11px;
+  opacity: 0.65;
+  margin-top: 4px;
+  text-align: right;
+}
+
 /* username above other-user messages */
 .msg-username {
   font-size: 13px;
