@@ -31,10 +31,6 @@ class SiteNavbar extends HTMLElement {
                   <img src="/public/images/logowhite.png" alt="Pantry Tracker Logo" class="logo-image"/>
                 </div>
 
-                <button class="menu-btn" aria-label="Menu" aria-expanded="false">
-                  ☰
-                </button>
-
                 <nav class="nav">
                   <a href="index.html" class="active">Home</a>
                   <a href="#features">Features</a>
@@ -50,13 +46,8 @@ class SiteNavbar extends HTMLElement {
             <header class="topbar">
               <div class="wrap">
                 <div class="brand">
-                  <div class="logo" aria-hidden="true">🍞</div>
-                  <span>Pantry Tracker</span>
+                  <img src="/public/images/logowhite.png" alt="Pantry Tracker Logo" class="logo-image"/>
                 </div>
-
-                <button class="menu-btn" aria-label="Menu" aria-expanded="false">
-                  ☰
-                </button>
 
                 <nav class="nav">
                   <a href="indexloggedin.html" class="active">Home</a>

@@ -47,11 +47,11 @@ img { max-width: 100%; display: block; }
 .nav .active { background:var(--oak-600); }
 .nav .muted { opacity:.6; }
 
-@media (max-width:760px){
+/* @media (max-width:760px){
   .menu-btn{display:block;}
   .nav{display:none; position:absolute; right:4%; top:56px; background:var(--oak-800); flex-direction:column; padding:10px; border-radius:8px; border:2px solid var(--oak-700);}
   .nav.open{display:flex;}
-}
+} */
 
 /* ---------- hero ---------- */
 .hero { background: linear-gradient(#fff, #f6efe7 60%); border-bottom: 1px solid #eadfda; }
