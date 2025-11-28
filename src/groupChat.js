@@ -82,50 +82,55 @@ function renderMessages(msgList, currentUid) {
   box.innerHTML = "";
 
   msgList.forEach((m) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "msg-wrapper";
+   const isYou = m.uid === currentUid;
 
-    const isYou = m.uid === currentUid;
+    // Outer row (matches .msg-row + .msg-row.you)
+    const row = document.createElement("div");
+    row.className = `msg-row ${isYou ? "you" : "other"}`;
 
-    // --- Profile picture ---
+    // Profile picture
     const img = document.createElement("img");
     img.className = "msg-pfp";
+    img.src = m.photoURL || "default_user.png";
 
-    img.src = m.photoURL || "/images/default-user.png";
+    // Wrapper for: username (optional), bubble, time
+    const wrapper = document.createElement("div");
+    wrapper.className = `msg-wrapper ${isYou ? "you" : "other"}`;
 
-    // --- Username for other users only ---
+    // Username (only show for other users)
     if (!isYou) {
-      const name = document.createElement("div");
-      name.className = "msg-username";
-      name.textContent = m.user || m.displayName || "Unknown";
-      wrapper.appendChild(name);
+        const nameEl = document.createElement("div");
+        nameEl.className = "msg-username";
+        nameEl.textContent = m.user || "Unknown";
+        wrapper.appendChild(nameEl);
     }
 
-    // --- Row container ---
-    const row = document.createElement("div");
-    row.className = `msg-row ${isYou ? "row-you" : "row-other"}`;
-    row.appendChild(img);
-
-    // --- Message bubble ---
+    // Bubble
     const bubble = document.createElement("div");
     bubble.className = `message ${isYou ? "you" : "other"}`;
-    bubble.textContent = m.text || "";
-    row.appendChild(bubble);
+    bubble.textContent = m.text;
+    wrapper.appendChild(bubble);
 
-    wrapper.appendChild(row);
-
-    // --- Timestamp ---
+    // Timestamp
+    const timeEl = document.createElement("div");
+    timeEl.className = "msg-time";
     if (m.timestamp?.toDate) {
-      const timeEl = document.createElement("div");
-      timeEl.className = "msg-time";
-      timeEl.textContent = m.timestamp
-        .toDate()
-        .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        timeEl.textContent = m.timestamp
+            .toDate()
+            .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+    wrapper.appendChild(timeEl);
 
-      wrapper.appendChild(timeEl);
+    // Combine depending on sender
+    if (isYou) {
+        row.appendChild(img);      // right side
+        row.appendChild(wrapper);
+    } else {
+        row.appendChild(img);      // left side
+        row.appendChild(wrapper);
     }
 
-    box.appendChild(wrapper);
+    box.appendChild(row);
   });
 
   box.scrollTop = box.scrollHeight;
